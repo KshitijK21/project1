@@ -1,0 +1,16 @@
+Date,Product,Region,Sales,Profit
+01-01-25,Laptop,West,50000,7000
+02-01-25,Mouse,North,12000,3000
+03-01-25,Laptop,East,55000,8000
+04-01-25,Keyboard,South,9000,2000
+05-01-25,Monitor,West,32000,5000
+06-01-25,Laptop,North,48000,6500
+07-01-25,Mouse,East,11000,2800
+08-01-25,Keyboard,West,8500,1900
+09-01-25,Monitor,South,30000,4700
+10-01-25,Laptop,East,,7200
+11-01-25,Mouse,North,12500,3100
+12-01-25,Monitor,West,31000,4900
+13-01-25,Keyboard,South,9200,2100
+14-01-25,Laptop,West,50000,7000
+15-01-25,Monitor,North,150000,4800
