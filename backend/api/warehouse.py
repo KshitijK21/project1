@@ -20,6 +20,9 @@ def generate_warehouse(dataset_id: str, db: Session = Depends(get_db)):
     df = pd.read_csv(dataset.file_path) if ext == ".csv" else pd.read_excel(dataset.file_path)
 
     schema = generate_star_schema(df, dataset.name)
+    from database.db import engine
+    from services.warehouse_service import load_data_to_sql
+    load_data_to_sql(df, schema["fact_table_name"], engine)
 
     warehouse = Warehouse(
         id=uuid.uuid4(),
