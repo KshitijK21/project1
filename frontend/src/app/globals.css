@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+:root {
+  /* Base surfaces — deep ink, not pure black */
+  --bg: #0e1113;
+  --surface: #15191c;
+  --surface-raised: #1b2024;
+  --border: #262c31;
+  --border-strong: #333b42;
+
+  /* Text */
+  --text-primary: #e9ecef;
+  --text-secondary: #9aa4ad;
+  --text-muted: #6b747c;
+
+  /* Signal accent — amber, like an instrument readout */
+  --signal: #e9a23b;
+  --signal-dim: #b17d2e;
+  --signal-soft: rgba(233, 162, 59, 0.12);
+
+  /* Data semantics */
+  --positive: #34c98e;
+  --positive-soft: rgba(52, 201, 142, 0.12);
+  --negative: #e2596b;
+  --negative-soft: rgba(226, 89, 107, 0.12);
+  --info: #5b9bd5;
+
+  --font-display: var(--font-space-grotesk);
+  --font-body: var(--font-inter);
+  --font-data: var(--font-jetbrains-mono);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-signal: var(--signal);
+  --color-signal-dim: var(--signal-dim);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-info: var(--info);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-data: var(--font-data);
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+::selection {
+  background: var(--signal-soft);
+  color: var(--signal);
+}
+
+/* Thin, quiet scrollbars — fits the instrument-panel restraint */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
