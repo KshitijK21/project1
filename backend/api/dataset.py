@@ -49,3 +49,17 @@ def preview_dataset(dataset_id: str, db: Session = Depends(get_db)):
 
     return {"filename": dataset.name, "rows": dataset.row_count,
             "columns": dataset.column_count, "preview": preview_data}
+
+@router.get("")
+def list_datasets(db: Session = Depends(get_db)):
+    datasets = db.query(Dataset).order_by(Dataset.id.desc()).all()
+    return [
+        {
+            "dataset_id": str(d.id),
+            "filename": d.name,
+            "rows": d.row_count,
+            "columns": d.column_count,
+            "status": d.status
+        }
+        for d in datasets
+    ]
