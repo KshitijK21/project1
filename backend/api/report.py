@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from fastapi.responses import FileResponse
+import os
 
 from database.db import get_db, engine
 from models.dataset import Dataset

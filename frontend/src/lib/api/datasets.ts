@@ -1,8 +1,20 @@
 import apiClient from "./client";
-import { Dataset } from "@/types/dataset";
+import { Dataset, DatasetPreview } from "@/types/dataset";
 
 export async function listDatasets(): Promise<Dataset[]> {
   const { data } = await apiClient.get<Dataset[]>("/datasets");
+  return data;
+}
+
+export async function getDatasetPreview(
+  datasetId: string,
+  page = 1,
+  perPage = 20
+): Promise<DatasetPreview> {
+  const { data } = await apiClient.get<DatasetPreview>(
+    `/datasets/${datasetId}/preview`,
+    { params: { page, per_page: perPage } }
+  );
   return data;
 }
 

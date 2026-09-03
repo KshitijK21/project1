@@ -36,7 +36,7 @@ async def upload_dataset(file: UploadFile = File(...), db: Session = Depends(get
 
 
 @router.get("/{dataset_id}/preview")
-def preview_dataset(dataset_id: str, db: Session = Depends(get_db)):
+def preview_dataset(dataset_id: str, page: int = 1, per_page: int = 20, db: Session = Depends(get_db)):
     dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
@@ -44,11 +44,33 @@ def preview_dataset(dataset_id: str, db: Session = Depends(get_db)):
     ext = os.path.splitext(dataset.file_path)[1].lower()
     df = pd.read_csv(dataset.file_path) if ext == ".csv" else pd.read_excel(dataset.file_path)
 
-    preview_json = df.head(10).to_json(orient="records")
-    preview_data = json.loads(preview_json)
+    per_page = max(1, min(per_page, 100))
+    page = max(1, page)
+    start = (page - 1) * per_page
+    end = start + per_page
+    total_rows = len(df)
 
-    return {"filename": dataset.name, "rows": dataset.row_count,
-            "columns": dataset.column_count, "preview": preview_data}
+    page_json = df.iloc[start:end].to_json(orient="records")
+    page_data = json.loads(page_json)
+
+    columns = [
+        {"name": col, "dtype": str(df[col].dtype), "nulls": int(df[col].isnull().sum()),
+         "uniques": int(df[col].nunique())}
+        for col in df.columns
+    ]
+
+    return {
+        "dataset_id": str(dataset.id),
+        "filename": dataset.name,
+        "rows": dataset.row_count,
+        "columns": dataset.column_count,
+        "column_info": columns,
+        "preview": page_data,
+        "page": page,
+        "per_page": per_page,
+        "total_rows": total_rows,
+        "total_pages": (total_rows + per_page - 1) // per_page
+    }
 
 @router.get("")
 def list_datasets(db: Session = Depends(get_db)):
