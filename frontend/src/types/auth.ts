@@ -18,6 +18,9 @@ export interface RegisterResponse {
   message: string;
   user_id: string;
   email: string;
+  access_token: string;
+  token_type: string;
+  role: string;
 }
 
 export interface ApiError {

@@ -11,3 +11,5 @@ frontend/.next
 frontend/.env.local
 PROGRESS_LOG.md
 *.log
+backend/uploads/
+backend/reports/

@@ -18,6 +18,10 @@ export async function getDatasetPreview(
   return data;
 }
 
+export async function deleteDataset(datasetId: string): Promise<void> {
+  await apiClient.delete(`/datasets/${datasetId}`);
+}
+
 export async function uploadDataset(
   file: File,
   onProgress?: (percent: number) => void

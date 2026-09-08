@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from database.db import get_db
 from models.user import User
+from models.dataset import Dataset
 from services.auth_service import decode_access_token
 
 
@@ -26,3 +27,13 @@ def require_admin(user: User = Depends(get_current_user)) -> User:
     if user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     return user
+
+
+def get_owned_dataset(dataset_id: str, user: User = Depends(get_current_user),
+                      db: Session = Depends(get_db)) -> Dataset:
+    """Return the dataset ONLY if it belongs to the current user. Raises 404 otherwise
+    so users cannot enumerate or access datasets uploaded by other accounts."""
+    dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
+    if not dataset or dataset.uploaded_by != user.id:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    return dataset

@@ -2,20 +2,24 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Database, Upload, CheckCircle2 } from "lucide-react";
+import { Database, Upload, CheckCircle2, Trash2 } from "lucide-react";
 import { Table, TableHead, TableBody, TableRow, TableHeaderCell, TableCell } from "@/components/ui/Table";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Skeleton from "@/components/ui/Skeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import ErrorState from "@/components/ui/ErrorState";
-import { listDatasets } from "@/lib/api/datasets";
+import { listDatasets, deleteDataset } from "@/lib/api/datasets";
+import { useToast } from "@/components/ui/Toast";
+import { isAxiosError } from "axios";
 import { Dataset } from "@/types/dataset";
 
 export default function DatasetsPage() {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   async function load() {
     setLoading(true);
@@ -33,6 +37,26 @@ export default function DatasetsPage() {
   useEffect(() => {
     load();
   }, []);
+
+  async function handleDelete(id: string, filename: string) {
+    if (!window.confirm(`Delete "${filename}"? This will permanently remove the dataset and all related analysis.`)) {
+      return;
+    }
+    setDeleting(id);
+    try {
+      await deleteDataset(id);
+      showToast(`"${filename}" deleted`, "success");
+      await load();
+    } catch (err) {
+      if (isAxiosError(err) && err.response?.data?.detail) {
+        showToast(err.response.data.detail, "error");
+      } else {
+        showToast("Failed to delete dataset.", "error");
+      }
+    } finally {
+      setDeleting(null);
+    }
+  }
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
@@ -81,11 +105,12 @@ export default function DatasetsPage() {
               <TableHeaderCell>Rows</TableHeaderCell>
               <TableHeaderCell>Columns</TableHeaderCell>
               <TableHeaderCell>Status</TableHeaderCell>
+              <TableHeaderCell className="text-right">Actions</TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {datasets.map((d) => (
-              <TableRow key={d.dataset_id} className="cursor-pointer">
+              <TableRow key={d.dataset_id}>
                 <TableCell>
                   <Link href={`/datasets/${d.dataset_id}`} className="hover:text-signal">
                     {d.filename}
@@ -98,6 +123,17 @@ export default function DatasetsPage() {
                     <CheckCircle2 className="h-3 w-3 mr-1" />
                     {d.status}
                   </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <button
+                    onClick={() => handleDelete(d.dataset_id, d.filename)}
+                    disabled={deleting === d.dataset_id}
+                    className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-negative disabled:opacity-50"
+                    title="Delete dataset"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    {deleting === d.dataset_id ? "Deleting..." : "Delete"}
+                  </button>
                 </TableCell>
               </TableRow>
             ))}

@@ -1,23 +1,22 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-import pandas as pd, os, uuid
+import os, uuid
 
 from database.db import get_db
 from models.dataset import Dataset
 from models.warehouse import Warehouse
 from services.warehouse_service import generate_star_schema
+from services.rbac_service import get_current_user, get_owned_dataset
+from utils.file_io import load_dataframe
 
 router = APIRouter(prefix="/warehouse", tags=["Warehouse"])
 
 
 @router.post("/{dataset_id}/generate")
-def generate_warehouse(dataset_id: str, db: Session = Depends(get_db)):
-    dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
-    if not dataset:
-        raise HTTPException(status_code=404, detail="Dataset not found")
-
+def generate_warehouse(dataset: Dataset = Depends(get_owned_dataset),
+                       db: Session = Depends(get_db), user=Depends(get_current_user)):
     ext = os.path.splitext(dataset.file_path)[1].lower()
-    df = pd.read_csv(dataset.file_path) if ext == ".csv" else pd.read_excel(dataset.file_path)
+    df = load_dataframe(dataset.file_path)
 
     schema = generate_star_schema(df, dataset.name)
     from database.db import engine
@@ -38,7 +37,7 @@ def generate_warehouse(dataset_id: str, db: Session = Depends(get_db)):
 
     return {
         "warehouse_id": str(warehouse.id),
-        "dataset_id": dataset_id,
+        "dataset_id": str(dataset.id),
         "fact_table_name": warehouse.fact_table_name,
         "measures": warehouse.measures,
         "dimensions": warehouse.dimensions,
@@ -47,8 +46,9 @@ def generate_warehouse(dataset_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/{dataset_id}")
-def get_warehouse(dataset_id: str, db: Session = Depends(get_db)):
-    warehouse = db.query(Warehouse).filter(Warehouse.dataset_id == dataset_id).order_by(Warehouse.id.desc()).first()
+def get_warehouse(dataset: Dataset = Depends(get_owned_dataset),
+                  db: Session = Depends(get_db), user=Depends(get_current_user)):
+    warehouse = db.query(Warehouse).filter(Warehouse.dataset_id == dataset.id).order_by(Warehouse.id.desc()).first()
     if not warehouse:
         raise HTTPException(status_code=404, detail="Run POST /warehouse/{dataset_id}/generate first")
 

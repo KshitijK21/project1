@@ -14,6 +14,11 @@ def save_dataframe(df: pd.DataFrame, file_path: str, ext: str):
 
 
 def load_dataframe(file_path: str) -> pd.DataFrame:
-    """Load a DataFrame from a CSV or Excel file."""
+    """Load a DataFrame from a CSV or Excel file, handling mixed encodings."""
     ext = os.path.splitext(file_path)[1].lower()
-    return pd.read_csv(file_path) if ext == ".csv" else pd.read_excel(file_path)
+    if ext == ".csv":
+        try:
+            return pd.read_csv(file_path)
+        except UnicodeDecodeError:
+            return pd.read_csv(file_path, encoding="latin-1")
+    return pd.read_excel(file_path)

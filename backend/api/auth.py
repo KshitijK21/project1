@@ -37,7 +37,10 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    return {"message": "User registered successfully", "user_id": str(user.id), "email": user.email}
+    token = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role})
+    log_action(db, user.id, user.email, "REGISTER", "/auth/register")
+    return {"message": "User registered successfully", "user_id": str(user.id), "email": user.email,
+            "access_token": token, "token_type": "bearer", "role": user.role}
 
 
 @router.post("/login")

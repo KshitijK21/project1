@@ -7,6 +7,7 @@ import { Eye, EyeOff, Activity, CheckCircle2 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { registerRequest } from "@/lib/api/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/components/ui/Toast";
 import { isAxiosError } from "axios";
 
@@ -19,6 +20,7 @@ function getPasswordStrength(password: string): { label: string; className: stri
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const { showToast } = useToast();
 
   const [email, setEmail] = useState("");
@@ -46,9 +48,10 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await registerRequest({ email, password });
-      showToast("Account created. Please sign in.", "success");
-      router.push("/login");
+      const data = await registerRequest({ email, password });
+      login(data.access_token, email, data.role);
+      showToast("Account created. Welcome!", "success");
+      router.push("/dashboard");
     } catch (err) {
       if (isAxiosError(err) && err.response?.data?.detail) {
         setError(err.response.data.detail);

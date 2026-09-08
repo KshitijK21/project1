@@ -10,7 +10,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import ErrorState from "@/components/ui/ErrorState";
 import Select from "@/components/ui/Select";
 import { listDatasets } from "@/lib/api/datasets";
-import { getWarehouse } from "@/lib/api/warehouse";
+import { generateWarehouse, getWarehouse } from "@/lib/api/warehouse";
 import { queryDataset } from "@/lib/api/ai";
 import { AiQueryResult } from "@/types/ai";
 
@@ -32,6 +32,8 @@ export default function AnalyticsPage() {
   const [datasets, setDatasets] = useState<{ dataset_id: string; filename: string }[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [columnsReady, setColumnsReady] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const [warehouseError, setWarehouseError] = useState("");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -60,11 +62,22 @@ export default function AnalyticsPage() {
     setSelectedId(id);
     setEntries([]);
     setColumnsReady(false);
+    setWarehouseError("");
     try {
       await getWarehouse(id);
       setColumnsReady(true);
     } catch {
-      setColumnsReady(false);
+      // No warehouse yet — generate it automatically so questions work
+      // without a manual pre-step on the dataset detail page.
+      setPreparing(true);
+      try {
+        await generateWarehouse(id);
+        setColumnsReady(true);
+      } catch {
+        setWarehouseError("Warehouse generation failed. Check the dataset, then try again.");
+      } finally {
+        setPreparing(false);
+      }
     }
   }
 
@@ -145,10 +158,21 @@ export default function AnalyticsPage() {
             <Bot className="h-4 w-4 text-signal" />
             AI Assistant
           </span>
-          {selectedId && !columnsReady && (
-            <Badge variant="signal">Generate warehouse to enable queries</Badge>
+          {preparing && (
+            <Badge variant="signal" className="animate-pulse">
+              Generating warehouse…
+            </Badge>
+          )}
+          {selectedId && !columnsReady && !preparing && !warehouseError && (
+            <Badge variant="signal">Select a dataset to enable queries</Badge>
           )}
         </div>
+
+        {selectedId && warehouseError && !preparing && (
+          <div className="px-5 py-2.5 border-b border-border bg-negative/10 text-sm text-negative">
+            {warehouseError}
+          </div>
+        )}
 
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
           {entries.length === 0 && (
@@ -163,7 +187,7 @@ export default function AnalyticsPage() {
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
-                    disabled={!selectedId || !columnsReady}
+                    disabled={!selectedId || !columnsReady || preparing}
                     onClick={() => ask(s)}
                     className="text-xs px-3 py-1.5 rounded-full border border-border bg-surface-raised text-text-secondary hover:text-signal hover:border-signal-dim disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
@@ -270,14 +294,16 @@ export default function AnalyticsPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={
-              selectedId && columnsReady
-                ? "Ask a question about this dataset..."
-                : "Select a dataset with a warehouse first"
+              preparing
+                ? "Generating warehouse…"
+                : selectedId && columnsReady
+                  ? "Ask a question about this dataset..."
+                  : "Select a dataset to enable queries"
             }
-            disabled={!selectedId || !columnsReady || busy}
+            disabled={!selectedId || !columnsReady || preparing || busy}
             className="flex-1 h-10 px-3 text-sm rounded-md bg-bg border border-border-strong focus:outline-none focus:border-signal disabled:opacity-50"
           />
-          <Button type="submit" disabled={!input.trim() || !selectedId || !columnsReady || busy} loading={busy}>
+          <Button type="submit" disabled={!input.trim() || !selectedId || !columnsReady || preparing || busy} loading={busy}>
             {!busy && <Send className="h-4 w-4" />}
             Ask
           </Button>
